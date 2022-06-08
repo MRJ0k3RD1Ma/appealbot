@@ -15,6 +15,14 @@ return [
     'components' => [
         'request' => [
             'csrfParam' => '_csrf-backend',
+            'baseUrl' => '/api',
+            'parsers' => [
+                'application/json' => 'yii\web\JsonParser',
+            ]
+        ],
+        'telegram' => [
+            'class' => 'aki\telegram\Telegram',
+            'botToken' => '5428461775:AAF5Zp-d4e33dBsdANl1lsY22ZZyQCdJsMo',
         ],
         'user' => [
             'identityClass' => 'common\models\User',
@@ -37,14 +45,22 @@ return [
         'errorHandler' => [
             'errorAction' => 'site/error',
         ],
-        /*
         'urlManager' => [
             'enablePrettyUrl' => true,
+            'enableStrictParsing' => true,
             'showScriptName' => false,
             'rules' => [
+                [
+                    'class' => 'yii\rest\UrlRule',
+                    'controller' => 'chat',
+                    'extraPatterns' => [
+                        'POST chat' => 'chat',
+                        'GET sethook' => 'sethook',
+
+                    ],
+                ],
             ],
-        ],
-        */
+        ]
     ],
     'params' => $params,
 ];
