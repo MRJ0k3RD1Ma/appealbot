@@ -56,6 +56,7 @@ return [
                     'extraPatterns' => [
                         'POST chat' => 'chat',
                         'GET sethook' => 'sethook',
+                        'GET hookstatus' => 'hookstatus',
 
                     ],
                 ],

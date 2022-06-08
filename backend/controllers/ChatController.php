@@ -49,6 +49,10 @@ class ChatController extends ActiveController {
         ]);
     }
 
+    public function actionHookstatus(){
+        return Yii::$app->telegram->getMe();
+    }
+
     public function actionChat(){
         if(Yii::$app->request->isPost){
             $log = new Logs();
