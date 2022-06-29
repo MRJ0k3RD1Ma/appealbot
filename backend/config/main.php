@@ -23,6 +23,7 @@ return [
         'telegram' => [
             'class' => 'aki\telegram\Telegram',
             'botToken' => '5428461775:AAF5Zp-d4e33dBsdANl1lsY22ZZyQCdJsMo',
+            'botUsername'=>'mfydanmurojaatbot',
         ],
         'user' => [
             'identityClass' => 'common\models\User',
