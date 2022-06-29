@@ -16,6 +16,7 @@ use Yii;
  * @property int|null $user_id
  * @property int|null $type_id
  * @property int|null $status
+ * @property int|null $position
  *
  * @property Type $type
  * @property Users $user
@@ -38,7 +39,7 @@ class Botusers extends \yii\db\ActiveRecord
     {
         return [
             [['village_id'], 'required'],
-            [['village_id', 'user_id', 'type_id', 'status'], 'integer'],
+            [['village_id', 'user_id', 'type_id', 'status','position'], 'integer'],
             [['chat_id', 'phone_number', 'address'], 'string', 'max' => 255],
             [['name'], 'string', 'max' => 50],
             [['type_id'], 'exist', 'skipOnError' => true, 'targetClass' => Type::className(), 'targetAttribute' => ['type_id' => 'id']],
@@ -62,6 +63,7 @@ class Botusers extends \yii\db\ActiveRecord
             'user_id' => 'User ID',
             'type_id' => 'Type ID',
             'status' => 'Status',
+            'position' => 'Position',
         ];
     }
 
