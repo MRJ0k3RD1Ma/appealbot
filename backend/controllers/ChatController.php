@@ -66,48 +66,47 @@ class ChatController extends ActiveController {
                 if($message == '/start'){
                     $this->start($chatId);
                     $start = true;
+                    exit;
                 }else{
                     if($this->checkChat($chatId)){
-
+                        $commond = [
+                            1=>'Tuman mahallaga murojaat qilish',
+                            2=>'Tuman hokimiga murojaat qilish',
+                            3=>'Viloyat mahallaga murojaat qilish',
+                            4=>'Viloyat hokimiga murojaat qilish',
+                        ];
                         $user = $this->getUser($chatId);
                         $position = $user->position;
-                        if($position != 0){
-                            if($message == ''){
-
+                        if($user->type_id == 1){
+                            if(in_array($message,$commond)){
+                                if($pos = array_search($message,$commond,true)){
+                                    $user->position = $pos;
+                                    $user->save(false);
+                                    $this->sendCommand($chatId,$commond[$user->position]);
+                                }
+                                exit;
                             }
-                        }
-                        if($position == 0){
-                            // Bosh sahifa
-                            $commond = [
-                                1=>'Tuman mahallaga murojaat qilish',
-                                2=>'Tuman hokimiga murojaat qilish',
-                                3=>'Viloyat mahallaga murojaat qilish',
-                                4=>'Viloyat hokimiga murojaat qilish',
-                            ];
-                            if($pos = array_search($message,$commond,true)){
-                                $user->position = $pos;
-                                $user->save(false);
+                            if($message == 'Bosh menuga qaytish'){
+                                $this->sendHome($chatId);
+                                exit;
                             }
 
-                            $this->sendCommand($chatId,$commond[$user->position]);
-
-
-                        }elseif($position == 1){
-                            // tuman mahalla
-                        }elseif($position == 2){
-                            // tuman hokimi
-                        }elseif($position == 3){
-                            // Viloyat mahalla
-                        }elseif($position == 4){
-                            // Viloyat hokimi
+                            $mes_id = $post['message']['message_id'];
+                            $from = $post['message']['from']['id'];
+                            $address = $user->village->district->name.' '.$user->village->name.' raisi **'.$user->name.'** dan kelgan xabar:';
+                            switch ($user->position){
+                                case 4: $this->toHokim($address,$mes_id,$from,$message); break;
+                            }
+                            $this->sendSuccess($chatId);
+                            exit;
                         }
 
                     }else{
                         $this->accessDeny($chatId);
+                        exit;
                     }
                 }
 
-                exit;
             }elseif(array_key_exists('contact',$post['message'])){
                 $log = new Logs();
                 $log->log = "contact true";
@@ -138,10 +137,62 @@ class ChatController extends ActiveController {
         }
     }
 
+    public function toHokim($address,$mes_id,$from,$text){
+// Viloyat hokimi
+        $hokim = Botusers::find()->where(['type_id'=>5])->andWhere(['status'=>1])->all();
+        foreach ($hokim as $item){
+            Yii::$app->telegram->sendMessage([
+                'chat_id' => $item->chat_id,
+                'text'=>$address.'
+'.$text,
+                'parse_mode'=>'Markdown',
+                'reply_markup' => json_encode([
+                    'inline_keyboard' => [
+                        [
+                            ['text' => 'Javob yozish', 'callback_data' => '{'.$mes_id.','.$from.',5,'.$item->chat_id.'}']
+                        ]
+                    ]
+                ])
+            ]);
+
+        }
+
+    }
+
+
+
+
+    public function sendSuccess($chatId){
+        Yii::$app->telegram->sendMessage([
+            'chat_id' => $chatId,
+            'text'=>'Sizning xabaringiz viloyat hokimiga yuborildi.',
+            'parse_mode'=>'Markdown',
+        ]);
+    }
+
+
     public function getUser($chatId){
         return Botusers::findOne(['chat_id'=>$chatId]);
     }
-
+    public function sendMenu($chatId){
+        $reply_markup = [
+            'one_time_keyboard'=>true,
+            'resize_keyboard'=>true,
+            'keyboard'=>[
+                ['Tuman mahallaga murojaat qilish'],
+                ['Tuman hokimiga murojaat qilish'],
+                ['Viloyat mahallaga murojaat qilish'],
+                ['Viloyat hokimiga murojaat qilish'],
+            ]
+        ];
+        $text = "Menuni tanlang";
+        Yii::$app->telegram->sendMessage([
+            'chat_id' => $chatId,
+            'text'=>$text,
+            'parse_mode'=>'Markdown',
+            'reply_markup' => json_encode($reply_markup)
+        ]);
+    }
     public function sendCommand($chatId,$position){
         $text = "Xabaringizni yozing:";
         $reply_markup = [
@@ -194,6 +245,25 @@ Tushinmovchilik yoki texnik xizmatlar uchun @mdg_admin ga murojaat qiling.";
         ]);
     }
 
+    public function sendHome($chatid){
+        $reply_markup = [
+            'one_time_keyboard'=>true,
+            'resize_keyboard'=>true,
+            'keyboard'=>[
+                ['Tuman mahallaga murojaat qilish'],
+                ['Tuman hokimiga murojaat qilish'],
+                ['Viloyat mahallaga murojaat qilish'],
+                ['Viloyat hokimiga murojaat qilish'],
+            ]
+        ];
+        $text = "Bosh menu";
+        Yii::$app->telegram->sendMessage([
+            'chat_id' => $chatid,
+            'text'=>$text,
+            'parse_mode'=>'Markdown',
+            'reply_markup' => json_encode($reply_markup)
+        ]);
+    }
 
     public function success($chatId,$type,$text = null){
         if($type == 1){
