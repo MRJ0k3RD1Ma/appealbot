@@ -101,6 +101,7 @@ class ChatController extends ActiveController {
                             $from = $post['message']['from']['id'];
                             $address = $user->village->district->name.' '.$user->village->name.' raisi **'.$user->name.'** dan kelgan xabar:';
                             switch ($user->position){
+                                // type 3 2 1 bo'lganlari uchun yozish kerak
                                 case 4: $this->toHokim($address,$up_id,$from,$message); break;
                             }
                             $this->sendSuccess($chatId);
