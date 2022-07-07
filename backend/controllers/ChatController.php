@@ -3,9 +3,11 @@
 namespace backend\controllers;
 
 
+use aki\telegram\Telegram;
 use common\models\Botusers;
 use common\models\Logs;
 use yii\base\BaseObject;
+use yii\debug\models\search\Log;
 use yii\filters\Cors;
 use yii\rest\ActiveController;
 use yii\web\Response;
@@ -13,6 +15,7 @@ use Yii;
 
 
 class ChatController extends ActiveController {
+
 
     public $modelClass = "common\models\Botusers";
 
@@ -59,10 +62,13 @@ class ChatController extends ActiveController {
             $log = new Logs();
             $log->log = json_encode(Yii::$app->request->post(),true);
             $log->save();
-            $chatId = $post['message']['chat']['id'];
+
 //            $message = isset($post['message']['text']) ? $post['message']['text'] : '050505';
             $start = false;
+            if(array_key_exists('message',$post)){
+
             if(array_key_exists('text',$post['message']) and $message = $post['message']['text']){
+                $chatId = $post['message']['chat']['id'];
                 if($message == '/start'){
                     $this->start($chatId);
                     $start = true;
@@ -91,11 +97,11 @@ class ChatController extends ActiveController {
                                 exit;
                             }
 
-                            $mes_id = $post['message']['message_id'];
+                            $up_id = $post['update_id'];
                             $from = $post['message']['from']['id'];
                             $address = $user->village->district->name.' '.$user->village->name.' raisi **'.$user->name.'** dan kelgan xabar:';
                             switch ($user->position){
-                                case 4: $this->toHokim($address,$mes_id,$from,$message); break;
+                                case 4: $this->toHokim($address,$up_id,$from,$message); break;
                             }
                             $this->sendSuccess($chatId);
                             exit;
@@ -107,7 +113,9 @@ class ChatController extends ActiveController {
                     }
                 }
 
-            }elseif(array_key_exists('contact',$post['message'])){
+            }
+            elseif(array_key_exists('contact',$post['message'])){
+                $chatId = $post['message']['chat']['id'];
                 $log = new Logs();
                 $log->log = "contact true";
                 $log->save();
@@ -131,13 +139,67 @@ class ChatController extends ActiveController {
                 }
             }
 
+            }
+            elseif(array_key_exists('callback_query',$post)){
+
+                $chatId = $post['callback_query']['from']['id'];
+                if($user = $this->getUser($chatId)){
+
+                    $user->message_id = $post['callback_query']['data'];
+                    $user->save(false);
+
+//                    $this->sendHokimAnswer($post['callback_query']['id']);
+                    $this->sendHokimAnswer($post['callback_query']['message']['id'],$chatId);
+
+                    $this->sendHokimReply($chatId,$post['callback_query']['message']['message_id']);
+
+
+                    exit;
+                }else{
+                    Yii::$app->telegram->sendMessage([
+                        'chat_id'=>$chatId,
+                        'text'=>'Foydalanuvchi topilmadi'
+                    ]);
+                }
+
+
+                exit;
+            }
+
             return $log;
         }else{
             return "null";
         }
     }
 
-    public function toHokim($address,$mes_id,$from,$text){
+    public function sendHokimAnswer($message,$mess_id){
+
+        Yii::$app->telegram->editMessageText([
+            'message_id'=>$mess_id,
+            'text'=>$message.' javobni yozing',
+            'reply_markup' => json_encode([
+                'force_reply' => true,
+                'selective' => false
+            ])
+        ]);
+    }
+
+
+    public function sendHokimReply($chatId,$calback_mes_id){
+        Yii::$app->telegram->sendMessage([
+            'chat_id'=>$chatId,
+            'text'=>'Ushbu xabarga javob yozing:',
+            'reply_to_message_id'=>$calback_mes_id,
+            'allow_sending_without_reply'=>true,
+            'reply_markup' => json_encode([
+                'force_reply' => true,
+                'selective' => false
+            ])
+        ]);
+    }
+
+
+    public function toHokim($address,$upd_id,$from,$text){
 // Viloyat hokimi
         $hokim = Botusers::find()->where(['type_id'=>5])->andWhere(['status'=>1])->all();
         foreach ($hokim as $item){
@@ -149,9 +211,9 @@ class ChatController extends ActiveController {
                 'reply_markup' => json_encode([
                     'inline_keyboard' => [
                         [
-                            ['text' => 'Javob yozish', 'callback_data' => '{'.$mes_id.','.$from.',5,'.$item->chat_id.'}']
+                            ['text' => 'Javob yozish', 'callback_data' => $upd_id]
                         ]
-                    ]
+                    ],
                 ])
             ]);
 
