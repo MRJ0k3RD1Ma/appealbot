@@ -148,8 +148,8 @@ class ChatController extends ActiveController {
                     $user->message_id = $post['callback_query']['data'];
                     $user->save(false);
 
-//                    $this->sendHokimAnswer($post['callback_query']['id']);
-                    $this->sendHokimAnswer($post['callback_query']['message']['id'],$chatId);
+                    $this->sendHokimAnswer($post['callback_query']['id']);
+//                    $this->sendHokimAnswer($post['callback_query']['message']['text'],$post['callback_query']['message']['id'],$chatId);
 
                     $this->sendHokimReply($chatId,$post['callback_query']['message']['message_id']);
 
@@ -172,9 +172,20 @@ class ChatController extends ActiveController {
         }
     }
 
-    public function sendHokimAnswer($message,$mess_id){
+    public function sendHokimAnswer($cid){
+        Yii::$app->telegram->answerCallbackQuery([
+            'callback_query_id'=>$cid,
+            'show_alert'=>false,
+            'text'=>'Javob yozing',
+            'cache_time'=>3
+        ]);
+    }
+
+
+    /*public function sendHokimAnswer($message,$mess_id,$chatId){
 
         Yii::$app->telegram->editMessageText([
+            'chat_id'=>$chatId,
             'message_id'=>$mess_id,
             'text'=>$message.' javobni yozing',
             'reply_markup' => json_encode([
@@ -182,7 +193,7 @@ class ChatController extends ActiveController {
                 'selective' => false
             ])
         ]);
-    }
+    }*/
 
 
     public function sendHokimReply($chatId,$calback_mes_id){
