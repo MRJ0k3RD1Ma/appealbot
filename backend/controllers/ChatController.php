@@ -148,10 +148,19 @@ class ChatController extends ActiveController {
                     $user->message_id = $post['callback_query']['data'];
                     $user->save(false);
 
-                    $this->sendHokimAnswer($post['callback_query']['id']);
+                    try {
+                        $this->sendHokimAnswer($post['callback_query']['id']);
 //                    $this->sendHokimAnswer($post['callback_query']['message']['text'],$post['callback_query']['message']['id'],$chatId);
 
-                    $this->sendHokimReply($chatId,$post['callback_query']['message']['message_id']);
+                        $this->sendHokimReply($chatId,$post['callback_query']['message']['message_id']);
+
+                    }catch (\Exception $e){
+                        Yii::$app->telegram->sendMessage([
+                            'chat_id' => $chatId,
+                            'text'=>json_encode($e),
+                            'parse_mode'=>'Markdown',
+                        ]);
+                    }
 
 
                     exit;
